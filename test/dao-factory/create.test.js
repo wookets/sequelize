@@ -25,7 +25,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
       intVal:       DataTypes.INTEGER,
       theDate:      DataTypes.DATE,
       aBool:        DataTypes.BOOLEAN,
-      uniqueName:   { type: DataTypes.STRING, unique: true }
+      uniqueName:   { type: DataTypes.STRING, unique: true, allowNull: true }
     })
 
     this.User.sync({ force: true }).success(function() {
