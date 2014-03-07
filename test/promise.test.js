@@ -209,7 +209,7 @@ describe(Support.getTestDialectTeaser("Promise"), function () {
               expect(updatedUser.username).to.equal('Doe John')
               done()
             })
-      })
+        })
     })
 
 
@@ -253,13 +253,13 @@ describe(Support.getTestDialectTeaser("Promise"), function () {
                                   expect(leBook.pages[0].content).to.equal('something totally different')
                                   expect(page.content).to.equal('something totally different')
                                   done()
-                              })
+                                })
                             })
                         })
                     })
-            })
-        }, done)
-      })
+                })
+            }, done)
+        })
     })
   })
 
@@ -287,7 +287,7 @@ describe(Support.getTestDialectTeaser("Promise"), function () {
         expect(err).to.be.an("object")
         expect(err.validateTest).to.be.an("array")
         expect(err.validateTest[0]).to.be.ok
-        expect(err.validateTest[0]).to.equal('Validation isInt failed: validateTest')
+        expect(err.validateTest[0]).to.equal('Validation isInt failed')
         done()
       });
     })
@@ -314,7 +314,7 @@ describe(Support.getTestDialectTeaser("Promise"), function () {
         expect(err.validateTest).to.be.ok
         expect(err.validateTest).to.be.an("array")
         expect(err.validateTest[0]).to.be.ok
-        expect(err.validateTest[0]).to.equal('Validation isInt failed: validateTest')
+        expect(err.validateTest[0]).to.equal('Validation isInt failed')
         done()
       })
     })

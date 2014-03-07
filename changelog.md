@@ -1,6 +1,28 @@
 Notice: All 1.7.x changes are present in 2.0.x aswell
 
-# v1.7.0-rc7 (next)
+# v2.0.0-dev11
+- [PERFORMANCE] increased build performance when using include, which speeds up findAll etc.
+
+#### Backwards compatability changes
+- selectedValues has been removed for performance reasons, if you depend on this, please open an issue and we will help you work around it.
+- foreign keys will now correctly be based on the alias of the model
+  - if you have any 1:1 relations where both sides use an alias, you'll need to set the foreign key, or they'll each use a different foreign key based on their alias.
+- foreign keys for non-id primary keys will now be named for the foreign key, i.e. pub_name rather than pub_id
+  - if you have non-id primary keys you should go through your associations and set the foreignKey option if relying on a incorrect _id foreign key
+
+# v1.7.0
+- [FEATURE] covers more advanced include cases with limiting and filtering (specifically cases where a include would be in the subquery but its child include wouldnt be, for cases where a 1:1 association had a 1:M association as a nested include)
+- [BUG] fixes issue where connection would timeout before calling COMMIT resulting in data never reaching the database [#1429](https://github.com/sequelize/sequelize/pull/1429)
+
+# v1.7.0-rc9
+- [PERFORMANCE] fixes performance regression introduced in rc7
+- [FEATURE] include all relations for a model [#1421](https://github.com/sequelize/sequelize/pull/1421)
+- [BUG] N:M adder/getter with through model and custom primary keys now work
+
+# v1.7.0-rc8
+- [BUG] fixes bug with required includes without wheres with subqueries
+
+# v1.7.0-rc7
 - [BUG] ORDER BY statements when using includes should now be places in the appropriate sub/main query more intelligently.
 - [BUG] using include.attributes with primary key attributes specified should no longer result in multiple primary key attributes being selected [#1410](https://github.com/sequelize/sequelize/pull/1410)
 - [DEPENDENCIES] all dependencies, including Validator have been updated to the latest versions.
@@ -48,6 +70,9 @@ Notice: All 1.7.x changes are present in 2.0.x aswell
 - [BUG] fixes bug where through models created by N:M associations would inherit hooks [#1263](https://github.com/sequelize/sequelize/issues/1263)
 - [FEATURE] .col()/.literal()/etc now works with findAll [#1249](https://github.com/sequelize/sequelize/issues/1249)
 - [BUG] now currectly handles connection timeouts as errors [#1207](https://github.com/sequelize/sequelize/issues/1207)
+
+# v2.0.0 (alpha1) #
+- [FEATURE] async validations. [#580](https://github.com/sequelize/sequelize/pull/580). thanks to Interlock
 
 # v1.7.0-rc1
 - [FEATURE] instance.createAssociationInstance functionality added [#1213](https://github.com/sequelize/sequelize/pull/1213)

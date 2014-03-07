@@ -830,6 +830,123 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
           })
         })
       })
+
+      describe('include all', function() {
+        beforeEach(function(done) {
+          var self = this
+
+          self.Continent = this.sequelize.define('Continent', { name: Sequelize.STRING })
+          self.Country = this.sequelize.define('Country', { name: Sequelize.STRING })
+          self.Industry = this.sequelize.define('Industry', { name: Sequelize.STRING })
+          self.Person = this.sequelize.define('Person', { name: Sequelize.STRING, lastName: Sequelize.STRING })
+
+          self.Continent.hasMany(self.Country)
+          self.Country.belongsTo(self.Continent)
+          self.Country.hasMany(self.Industry)
+          self.Industry.hasMany(self.Country)
+          self.Country.hasMany(self.Person)
+          self.Person.belongsTo(self.Country)
+          self.Country.hasMany(self.Person, { as: 'Residents', foreignKey: 'CountryResidentId' })
+          self.Person.belongsTo(self.Country, { as: 'CountryResident', foreignKey: 'CountryResidentId' })
+
+          async.forEach([ self.Continent, self.Country, self.Industry, self.Person ], function(model, callback) {
+            model.sync({ force: true }).done(callback)
+          }, function () {
+            async.parallel({
+              europe: function(callback) {self.Continent.create({ name: 'Europe' }).done(callback)},
+              england: function(callback) {self.Country.create({ name: 'England' }).done(callback)},
+              coal: function(callback) {self.Industry.create({ name: 'Coal' }).done(callback)},
+              bob: function(callback) {self.Person.create({ name: 'Bob', lastName: 'Becket' }).done(callback)}
+            }, function(err, r) {
+              if (err) throw err
+
+              _.forEach(r, function(item, itemName) {
+                self[itemName] = item
+              })
+
+              async.parallel([
+                function(callback) {self.england.setContinent(self.europe).done(callback)},
+                function(callback) {self.england.addIndustry(self.coal).done(callback)},
+                function(callback) {self.bob.setCountry(self.england).done(callback)},
+                function(callback) {self.bob.setCountryResident(self.england).done(callback)}
+              ], function(err) {
+                if (err) throw err
+                done()
+              })
+            })
+          })
+        })
+
+        it('includes all associations', function(done) {
+          this.Country.findAll({ include: [ { all: true } ] }).done(function(err, countries) {
+            expect(err).not.to.be.ok
+            expect(countries).to.exist
+            expect(countries[0]).to.exist
+            expect(countries[0].continent).to.exist
+            expect(countries[0].industries).to.exist
+            expect(countries[0].persons).to.exist
+            expect(countries[0].residents).to.exist
+            done()
+          })
+        })
+
+        it('includes specific type of association', function(done) {
+          this.Country.findAll({ include: [ { all: 'BelongsTo' } ] }).done(function(err, countries) {
+            expect(err).not.to.be.ok
+            expect(countries).to.exist
+            expect(countries[0]).to.exist
+            expect(countries[0].continent).to.exist
+            expect(countries[0].industries).not.to.exist
+            expect(countries[0].persons).not.to.exist
+            expect(countries[0].residents).not.to.exist
+            done()
+          })
+        })
+
+        it('utilises specified attributes', function(done) {
+          this.Country.findAll({ include: [ { all: 'HasMany', attributes: [ 'name' ] } ] }).done(function(err, countries) {
+            expect(err).not.to.be.ok
+            expect(countries).to.exist
+            expect(countries[0]).to.exist
+            expect(countries[0].industries).to.exist
+            expect(countries[0].persons).to.exist
+            expect(countries[0].persons[0]).to.exist
+            expect(countries[0].persons[0].name).not.to.be.undefined
+            expect(countries[0].persons[0].lastName).to.be.undefined
+            expect(countries[0].residents).to.exist
+            expect(countries[0].residents[0]).to.exist
+            expect(countries[0].residents[0].name).not.to.be.undefined
+            expect(countries[0].residents[0].lastName).to.be.undefined
+            done()
+          })
+        })
+
+        it('is over-ruled by specified include', function(done) {
+          this.Country.findAll({ include: [ { all: true }, { model: this.Continent, attributes: [] } ] }).done(function(err, countries) {
+            expect(err).not.to.be.ok
+            expect(countries).to.exist
+            expect(countries[0]).to.exist
+            expect(countries[0].continent).to.exist
+            expect(countries[0].continent.name).to.be.undefined
+            done()
+          })
+        })
+
+        it('includes all nested associations', function(done) {
+          this.Continent.findAll({ include: [ { all: true, nested: true } ] }).done(function(err, continents) {
+            expect(err).not.to.be.ok
+            expect(continents).to.exist
+            expect(continents[0]).to.exist
+            expect(continents[0].countries).to.exist
+            expect(continents[0].countries[0]).to.exist
+            expect(continents[0].countries[0].industries).to.exist
+            expect(continents[0].countries[0].persons).to.exist
+            expect(continents[0].countries[0].residents).to.exist
+            expect(continents[0].countries[0].continent).not.to.exist
+            done()
+          })
+        })
+      })
     })
 
     describe('order by eager loaded tables', function() {
@@ -922,7 +1039,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
               callback()
             })
           }, function() {done()})
-        }),
+        })
 
         it('sorts by 2nd degree association', function(done) {
           var self = this
@@ -952,6 +1069,29 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
             self.Continent.findAll({
               include: [ { model: self.Country, include: [ self.Person, {model: self.Person, as: 'Residents' } ] } ],
               order: [ [ self.Country, {model: self.Person, as: 'Residents' }, 'lastName', params[0] ] ]
+            }).done(function(err, continents) {
+              expect(err).not.to.be.ok
+              expect(continents).to.exist
+              expect(continents[0]).to.exist
+              expect(continents[0].name).to.equal(params[1])
+              expect(continents[0].countries).to.exist
+              expect(continents[0].countries[0]).to.exist
+              expect(continents[0].countries[0].name).to.equal(params[2])
+              expect(continents[0].countries[0].residents).to.exist
+              expect(continents[0].countries[0].residents[0]).to.exist
+              expect(continents[0].countries[0].residents[0].name).to.equal(params[3])
+              callback()
+            })
+          }, function() {done()})
+        })
+
+        it('sorts by 2nd degree association with alias while using limit', function(done) {
+          var self = this
+          async.forEach([ [ 'ASC', 'Europe', 'France', 'Fred' ], [ 'DESC', 'Europe', 'England', 'Kim' ] ], function(params, callback) {
+            self.Continent.findAll({
+              include: [ { model: self.Country, include: [ self.Person, {model: self.Person, as: 'Residents' } ] } ],
+              order: [ [ { model: self.Country }, {model: self.Person, as: 'Residents' }, 'lastName', params[0] ] ],
+              limit: 3
             }).done(function(err, continents) {
               expect(err).not.to.be.ok
               expect(continents).to.exist
@@ -1324,8 +1464,8 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
         expect(info.count).to.equal(2)
         expect(Array.isArray(info.rows)).to.be.ok
         expect(info.rows.length).to.equal(2)
-        expect(info.rows[0].selectedValues).to.not.have.property('username')
-        expect(info.rows[1].selectedValues).to.not.have.property('username')
+        expect(info.rows[0].dataValues).to.not.have.property('username')
+        expect(info.rows[1].dataValues).to.not.have.property('username')
         done()
       })
     })

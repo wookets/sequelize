@@ -911,6 +911,19 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
     })
 
     describe('primary key handling for join table', function () {
+      beforeEach(function (done) {
+        var self = this
+        this.User = this.sequelize.define('User',
+          { username: DataTypes.STRING },
+          { tableName: 'users'}
+        )
+        this.Task = this.sequelize.define('Task',
+          { title: DataTypes.STRING },
+          { tableName: 'tasks' }
+        )
+
+        done()
+      })
       it('removes the primary key if it was added by sequelize', function () {
         var self = this
         this.UserTasks = this.sequelize.define('usertasks', {});
@@ -918,7 +931,7 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
         this.User.hasMany(this.Task, { through: this.UserTasks })
         this.Task.hasMany(this.User, { through: this.UserTasks })
 
-        expect(Object.keys(self.UserTasks.primaryKeys)).to.deep.equal(['taskId', 'userId'])
+        expect(Object.keys(self.UserTasks.primaryKeys)).to.deep.equal(['TaskId', 'UserId'])
       })
 
       it('keeps the primary key if it was added by the user', function () {
@@ -951,12 +964,12 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
 
         _.each([self.UserTasks, self.UserTasks2], function (model) {
           fk = Object.keys(model.options.uniqueKeys)[0]
-          expect(model.options.uniqueKeys[fk].fields).to.deep.equal([ 'taskId', 'userId' ])
+          expect(model.options.uniqueKeys[fk].fields).to.deep.equal([ 'TaskId', 'UserId' ])
         })
       })
     })
 
-    describe('join table model', function () {
+    describe('through', function () {
       beforeEach(function (done) {
         this.User = this.sequelize.define('User', {})
         this.Project = this.sequelize.define('Project', {})
@@ -1059,9 +1072,56 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
 
             this.sequelize.sync().done(function(err) {
               expect(err).not.to.be.ok
-              Worker.create().done(function (err, worker) {
+              Worker.create({id: 1337}).done(function (err, worker) {
                 expect(err).not.to.be.ok
-                Task.create().done(function (err, task) {
+                Task.create({id: 7331}).done(function (err, task) {
+                  expect(err).not.to.be.ok
+                  worker.addTask(task).done(function (err) {
+                    expect(err).not.to.be.ok
+                    worker.addTask(task).done(function (err) {
+                      expect(err).not.to.be.ok
+                      done()
+                    })
+                  })
+                })
+              })
+            })
+          })
+
+          it('should be able to add twice (second call result in UPDATE call) with custom primary keys and without any attributes (and timestamps off) on the through model', function (done) {
+            var Worker = this.sequelize.define('Worker', {
+                id: {
+                  type: DataTypes.INTEGER,
+                  allowNull: false,
+                  primaryKey: true,
+                  autoIncrement: true
+                }
+              }, {timestamps: false})
+              , Task = this.sequelize.define('Task', {
+                id: {
+                  type: DataTypes.INTEGER,
+                  allowNull: false,
+                  primaryKey: true,
+                  autoIncrement: true
+                }
+              }, {timestamps: false})
+              , WorkerTasks = this.sequelize.define('WorkerTasks', {
+                id: {
+                  type: DataTypes.INTEGER,
+                  allowNull: false,
+                  primaryKey: true,
+                  autoIncrement: true
+                }
+              }, {timestamps: false})
+
+            Worker.hasMany(Task, { through: WorkerTasks })
+            Task.hasMany(Worker, { through: WorkerTasks })
+
+            this.sequelize.sync().done(function(err) {
+              expect(err).not.to.be.ok
+              Worker.create({id: 1337}).done(function (err, worker) {
+                expect(err).not.to.be.ok
+                Task.create({id: 7331}).done(function (err, task) {
                   expect(err).not.to.be.ok
                   worker.addTask(task).done(function (err) {
                     expect(err).not.to.be.ok
@@ -1201,7 +1261,7 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
             .then(function() { return a1.setRelation1(b1) })
             .then(function() { return self.A.find({ where: { name: 'a1' } }) })
             .done(function(a) {
-              expect(a.bId).to.be.eq(b1.id)
+              expect(a.relation1Id).to.be.eq(b1.id)
               done()
             })
         })
@@ -1230,7 +1290,7 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
             .then(function() { return b1.setRelation1(a1) })
             .then(function() { return self.B.find({ where: { name: 'b1' } }) })
             .done(function(b) {
-              expect(b.aId).to.be.eq(a1.id)
+              expect(b.relation1Id).to.be.eq(a1.id)
               done()
             })
         })
@@ -1399,7 +1459,7 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
                 // the `UPDATE` query generated by `save()` uses `id` in the
                 // `WHERE` clause
 
-                var tableName = user.QueryInterface.QueryGenerator.addSchema(user.__factory)
+                var tableName = user.QueryInterface.QueryGenerator.addSchema(user.Model)
                 user.QueryInterface.update(user, tableName, {id: 999}, user.id)
                 .success(function() {
                   Task.findAll().success(function(tasks) {
@@ -1431,7 +1491,7 @@ describe(Support.getTestDialectTeaser("HasMany"), function() {
                 // the `UPDATE` query generated by `save()` uses `id` in the
                 // `WHERE` clause
 
-                var tableName = user.QueryInterface.QueryGenerator.addSchema(user.__factory)
+                var tableName = user.QueryInterface.QueryGenerator.addSchema(user.Model)
                 user.QueryInterface.update(user, tableName, {id: 999}, user.id)
                 .error(function() {
                   // Should fail due to FK restriction

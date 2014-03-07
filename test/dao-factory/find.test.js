@@ -101,7 +101,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
         })
       })
 
-      it('doesn\'t throw an error when entering in a non integer value', function(done) {
+      xit('doesn\'t throw an error when entering in a non integer value', function(done) {
         this.User.find('a string value').success(function(user) {
           expect(user).to.be.null
           done()
@@ -223,82 +223,6 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
               expect(u2.id).to.equal('a string based id')
               expect(u2.name).to.equal('Johnno')
               done()
-            })
-          })
-        })
-      })
-
-
-      it('returns the selected fields as instance.selectedValues', function(done) {
-        var self = this
-        this.User.create({
-          username: 'JohnXOXOXO'
-        }).success(function() {
-          self.User.find({
-            where: { username: 'JohnXOXOXO' },
-            attributes: ['username']
-          }).done(function(err, user) {
-            expect(err).not.to.be.ok
-            expect(_.omit(user.selectedValues, ['id'])).to.have.property('username', 'JohnXOXOXO')
-            done()
-          })
-        })
-      })
-
-      it('returns the selected fields and all fields of the included table as instance.selectedValues', function(done) {
-        var self = this
-        self.Mission = self.sequelize.define('Mission', {
-          title:  {type: Sequelize.STRING, defaultValue: 'a mission!!'},
-          foo:    {type: Sequelize.INTEGER, defaultValue: 2},
-        })
-
-        self.Mission.belongsTo(self.User)
-        self.User.hasMany(self.Mission)
-
-        self.Mission.sync({ force: true }).success(function() {
-          self.Mission.create().success(function(mission) {
-            self.User.create({username: 'John DOE'}).success(function(user) {
-              mission.setUser(user).success(function() {
-                self.User.find({
-                  where: { username: 'John DOE' },
-                  attributes: ['username'],
-                  include: [self.Mission]
-                }).done(function(err, user) {
-                  expect(err).not.to.be.ok
-                  expect(_.omit(user.selectedValues, ['id'])).to.deep.equal({ username: 'John DOE' })
-                  done()
-                })
-              })
-            })
-          })
-        })
-      })
-
-      it('returns the selected fields for both the base table and the included table as instance.selectedValues', function(done) {
-        var self = this
-        self.Mission = self.sequelize.define('Mission', {
-          title:  {type: Sequelize.STRING, defaultValue: 'another mission!!'},
-          foo:    {type: Sequelize.INTEGER, defaultValue: 4},
-        })
-
-        self.Mission.belongsTo(self.User)
-        self.User.hasMany(self.Mission)
-
-        self.Mission.sync({ force: true }).success(function() {
-          self.Mission.create().success(function(mission) {
-            self.User.create({username: 'Brain Picker'}).success(function(user) {
-              mission.setUser(user).success(function() {
-                self.User.find({
-                  where: { username: 'Brain Picker' },
-                  attributes: ['username'],
-                  include: [{model: self.Mission, as: self.Mission.tableName, attributes: ['title']}]
-                }).success(function(user) {
-                  expect(_.omit(user.selectedValues, ['id'])).to.deep.equal({ username: 'Brain Picker' })
-                  expect(user.missions[0].selectedValues).to.deep.equal({ id: 1, title: 'another mission!!'})
-                  expect(user.missions[0].foo).not.to.exist
-                  done()
-                })
-              })
             })
           })
         })
@@ -462,7 +386,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
           self.User.belongsTo(self.Group)
 
           self.sequelize.sync({ force: true }).success(function() {
-            self.User.create({ username: 'someone', GroupPKeagerbelongId: 'people' }).success(function() {
+            self.User.create({ username: 'someone', GroupPKeagerbelongName: 'people' }).success(function() {
               self.Group.create({ name: 'people' }).success(function() {
                 self.User.find({
                    where: {
@@ -604,7 +528,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
           self.Group.hasOne(self.User)
 
           self.sequelize.sync({ force: true }).success(function() {
-            self.User.create({ username: 'someone', GroupPKeageroneId: 'people' }).success(function() {
+            self.User.create({ username: 'someone', GroupPKeageroneName: 'people' }).success(function() {
               self.Group.create({ name: 'people' }).success(function() {
                 self.Group.find({
                    where: {
