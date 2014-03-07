@@ -59,9 +59,9 @@ describe(Support.getTestDialectTeaser("Transaction"), function () {
       transaction.prepareEnvironment(function() {
         setTimeout(function() {
           self.sequelize.query('select 1+1 as sum', null, {
-            raw: true,
-            plain: true,
-            transaction: transaction
+            raw:         true,
+            plain:       true,
+            transaction: transaction,
           }).done(function(err, result) {
             expect(err).to.be.null
             expect(result.sum).to.equal(2)
