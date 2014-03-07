@@ -125,6 +125,13 @@ var Support = {
     return envDialect
   },
 
+  getTestDialectSupports: function() {
+    var dialectName = this.getTestDialect()
+      , dialect     = require(__dirname + '/../lib/dialects/' + dialectName)
+
+    return dialect.prototype.supports
+  },
+
   dialectIsMySQL: function(strict) {
     var envDialect = process.env.DIALECT || 'mysql'
     if (strict === undefined) {

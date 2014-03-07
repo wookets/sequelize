@@ -961,7 +961,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
           {name: 'foo', code: '123'},
           {code: '1234'},
           {name: 'bar', code: '1'}
-        ], { validate: true }).error(function(errors) { 
+        ], { validate: true }).error(function(errors) {
           expect(errors).to.not.be.null
           expect(errors).to.be.instanceof(Array)
           expect(errors).to.have.length(2)
@@ -1042,7 +1042,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
       })
     })
 
-    if (Support.getTestDialect() !== 'postgres') {
+    if (Support.getTestDialectSupports().ignoreDuplicates) {
       it("should support the ignoreDuplicates option", function(done) {
         var self = this
           , data = [{ uniqueName: 'Peter', secretValue: '42' },
@@ -1075,7 +1075,7 @@ describe(Support.getTestDialectTeaser("DAOFactory"), function () {
 
           self.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'], ignoreDuplicates: true }).error(function(err) {
             expect(err).to.exist
-            expect(err.message).to.match(/Postgres does not support the \'ignoreDuplicates\' option./)
+            expect(err.message).to.match(new RegExp(Support.getTestDialect() + " does not support the 'ignoreDuplicates' option."))
 
             done();
           })
